@@ -1,0 +1,243 @@
+---
+title: "LBB DV"
+author: "Muhamad Ilyas Haikal"
+date: "`r Sys.Date()`"
+output: 
+ html_document:
+   toc: true
+   toc_float: true
+   highlight: zenburn
+   df_print: paged
+   theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Introduction
+
+Love Bike is the middle level company, which working at rental bike bussiness. The company give two kind service, such as : - hour rental bike - daily rental bike
+
+The company hope to develop their business. So the management want to analize data : - What time the company get the highest visitors / customers (hour)? - What weekdays the company get the highest visitors / customers (day)? - Is the company need to focus adding the employee on time above ? - Is the company need do other improvement?
+
+# 2. Data Set Up
+This is set up library
+
+```{r}
+library(lubridate)
+library(ggplot2)
+library(tidyverse)
+library(ggpubr)
+library(scales)
+library(glue)
+library(plotly)
+```
+
+# 3. Data Pre - Processing
+
+## 3.1. Read Data
+```{r}
+rent_day <- read.csv("day.csv")
+rent_hour <- read.csv("hour.csv")
+```
+
+```{r}
+#check data
+head(rent_day)
+```
+
+```{r}
+# check dimensi data
+dim(rent_hour)
+```
+```{r}
+names(rent_hour)
+```
+```{r}
+dim(rent_day)
+```
+
+```{r}
+names(rent_day)
+```
+## 3.2. Check Data Type
+Check data type for each column using the str() function.
+
+The str() function will do a sanity check on the structure and show sample data for each variable.
+
+```{r}
+rent_hour$dteday <- ymd(rent_hour$dteday)
+rent_day$dteday <- ymd(rent_day$dteday)
+```
+
+```{r}
+str(rent_hour)
+```
+```{r}
+rent_hour$yr <- as.factor(rent_hour$yr)
+rent_hour$holiday <- as.factor(rent_hour$holiday)
+rent_hour$workingday <- as.factor(rent_hour$workingday)
+str(rent_hour)
+```
+```{r}
+str(rent_day)
+```
+```{r}
+rent_day$yr <- as.factor(rent_day$yr)
+rent_day$holiday <- as.factor(rent_day$holiday)
+rent_day$workingday <- as.factor(rent_day$workingday)
+str(rent_day)
+```
+
+## 3.3. Check for Missing Value
+We can use colSums() and anyNA() function to check if there is missing value in our data.
+```{r}
+colSums(is.na(rent_hour))
+```
+```{r}
+colSums(is.na(rent_day))
+```
+
+colSums(is.na()) is for check how many missing value in our data. If the result is zero (0), so our data have no missing value.
+
+```{r}
+anyNA(rent_hour)
+```
+
+```{r}
+anyNA(rent_day)
+```
+
+anyNA() is for check missing value in our data. If the result is “FALSE”, so our data have no missing value / NA.
+
+Now, rent_hour and rent_day dataset is ready to be processed and analyzed.
+
+## 3.4 Data Explanation
+The summary() function will do a sanity check on the structure and show IQR and class data for each variable.
+
+```{r}
+summary(rent_hour)
+```
+
+```{r}
+summary(rent_day)
+```
+It works well, but a more complete function is the skim() function from the “skimr” package. It breaks down the variables by type with relevant summary information, PLUS a small histogram for each numeric variable.
+
+```{r}
+library(skimr)
+skim(rent_hour)
+```
+
+```{r}
+skim(rent_day)
+```
+
+Summary : A. data :rent_hour 1. casual => sd value = 49.30 and mean = 35.70 2. registered => sd value = 151.00 and mean = 154.00 3. cnt => sd value = 181.00 and mean = 189.00
+
+B. data :rent_day 1. casual => sd value = 687.00 and mean = 848.00 2. registered => sd value = 1560.00 and mean = 3656.00 3. cnt => sd value = 1937.00 and mean = 4504.00
+
+## 3.5. Check the Outlier
+
+```{r}
+boxplot(rent_hour$casual, rent_hour$registered, rent_hour$cnt , main="Boxplot for Hour Rental Bike (continuos var)")
+```
+```{r}
+boxplot(rent_day$casual, rent_day$registered, rent_day$cnt , main="Boxplot for Daily Rental Bike (continuos var)")
+```
+From result above, we find posibilities for the outliers, but from our calculation, sd value in cnt is not far above mean value (in my oppinion its still be tolerated), so the process may continue.
+
+# 4. Data Processing and Plotting
+Please add column with year and weekdays for data rent_hour and rent_day!
+```{r}
+
+```
+
+
+```{r}
+#rent_hour$year <- year(rent_hour$dteday)
+#rent_hour$weekdays <- wday(rent_hour$dteday, # data
+                         # label = T, # nama (T)/digit (F)
+                         # abbr = F, # disingkat/tidak
+                         # week_start = 1, # minggu dimulai di hari ke berapa (Senin = 1)
+                         # locale = "IND") # penggantian bahasa
+
+#head(rent_hour)
+```
+```{r}
+rent_day$year <- year(rent_day$dteday)
+rent_day$weekdays <- wday(rent_day$dteday, # data
+                          label = T, # nama (T)/digit (F)
+                          abbr = F, # disingkat/tidak
+                          week_start = 1, # minggu dimulai di hari ke berapa (Senin = 1)
+                          locale = "IND") # bahasa
+
+head(rent_day)
+```
+2. Analize weekdays that highest visitors (use column cnt) on data rent_day! Please make plotting !
+
+```{r}
+wday <- aggregate(cnt ~ year + weekdays,
+                        data = rent_day,
+                        FUN = mean)
+wday
+```
+
+```{r}
+#Plotting
+g1 <- ggplot(data = wday, mapping = aes(x = cnt, y =reorder(weekdays,cnt) ),
+             text = glue("Total Rent Bike by {weekdays}: {(cnt)}")) + 
+  geom_col(aes(fill = year), position = "dodge") +
+  labs(x = "Weekdays", y = NULL,
+       fill = NULL,
+       title = "Top Visitors Rental Bike by Weekdays") +
+  facet_wrap(~year, 
+             scales = "free_y")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,
+                                   hjust = 1))
+
+g1
+```
+```{r}
+ggplotly(g1, tooltip = "text")
+```
+Insight : - On the year 2011, “Love Bike” got highest visitors on Jumat (3500.115), Selasa (3468.038) and Senin (3465.788) - On the year 2012, “Love Bike” got highest visitors on Kamis (5977.750), Jumat (5880.462) dan Rabu (5843.827)
+
+3. Analize the hour highest visitors (use column cnt) on data rent_hour! Please make plotting !
+
+```{r}
+hhour <- aggregate(cnt ~ year + hr,
+                        data = rent_hour,
+                        FUN = mean)
+hhour
+
+```
+```{r}
+# Plotting
+
+g2 <- ggplot(data = hhour, mapping = aes(x = hr, y = cnt)) + 
+  geom_line(aes(group = year,
+                col = year)) + 
+  geom_point(aes(col = year)) + 
+  labs(x = "Hours", y = NULL,
+       fill = NULL,
+       title = "Top Visitors Rental Bike by Hours") +
+  scale_x_continuous(breaks = seq(0,23,1)) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90,
+                                   hjust = 1))
+
+g2
+```
+Insight : 
+- On the year 2011, “Love Bike” got highest visitors at hour : 17:00 (349.676712), 18:00 (322.272727) and 08:00 (262.994490)
+
+- On the year 2012, “Love Bike” got highest visitors at hour : 17:00 (573.227397), 18:00 (528.183562) dan 08:00 (454.763736)
+
+# 5. Recomendation
+Based on the plotting on above, we can recommend : 1) “Love Bike” can increase the number of employees to working on day : Kamis, Jumat and Rabu at hour : 08:00, 17:00 and 18:00.
+
+The company can do maintenance/manual checking of Bikes at the other day of the high visitors days on above. With doing this periodically, the company can give the best service and increase customer satisfaction.
+We hope that the analize data can help the improvement of both income and service at “Love Bike” company.
